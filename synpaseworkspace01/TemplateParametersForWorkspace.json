@@ -1,0 +1,36 @@
+{
+	"$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"workspaceName": {
+			"value": "synpaseworkspace01"
+		},
+		"AzureDataLakeStorage1_accountKey": {
+			"value": ""
+		},
+		"SynapseAnalytics_password": {
+			"value": ""
+		},
+		"synpaseworkspace01-WorkspaceDefaultSqlServer_connectionString": {
+			"value": "Integrated Security=False;Encrypt=True;Connection Timeout=30;Data Source=tcp:synpaseworkspace01.sql.azuresynapse.net,1433;Initial Catalog=@{linkedService().DBName}"
+		},
+		"AzureDataLakeStorage1_properties_typeProperties_url": {
+			"value": "https://synapsestorage002.dfs.core.windows.net/"
+		},
+		"BlobStorage_sasUri": {
+			"value": ""
+		},
+		"SynapseAnalytics_properties_typeProperties_server": {
+			"value": "synpaseworkspace01.sql.azuresynapse.net"
+		},
+		"SynapseAnalytics_properties_typeProperties_database": {
+			"value": "regexpooldedicated"
+		},
+		"SynapseAnalytics_properties_typeProperties_userName": {
+			"value": "synpaseworkspace01"
+		},
+		"synpaseworkspace01-WorkspaceDefaultStorage_properties_typeProperties_url": {
+			"value": "https://shivamaccount123.dfs.core.windows.net"
+		}
+	}
+}

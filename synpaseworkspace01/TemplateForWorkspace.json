@@ -1,0 +1,666 @@
+{
+	"$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"workspaceName": {
+			"type": "string",
+			"metadata": "Workspace name",
+			"defaultValue": "synpaseworkspace01"
+		},
+		"AzureDataLakeStorage1_accountKey": {
+			"type": "secureString",
+			"metadata": "Secure string for 'accountKey' of 'AzureDataLakeStorage1'"
+		},
+		"SynapseAnalytics_password": {
+			"type": "secureString",
+			"metadata": "Secure string for 'password' of 'SynapseAnalytics'"
+		},
+		"synpaseworkspace01-WorkspaceDefaultSqlServer_connectionString": {
+			"type": "secureString",
+			"metadata": "Secure string for 'connectionString' of 'synpaseworkspace01-WorkspaceDefaultSqlServer'",
+			"defaultValue": "Integrated Security=False;Encrypt=True;Connection Timeout=30;Data Source=tcp:synpaseworkspace01.sql.azuresynapse.net,1433;Initial Catalog=@{linkedService().DBName}"
+		},
+		"AzureDataLakeStorage1_properties_typeProperties_url": {
+			"type": "string",
+			"defaultValue": "https://synapsestorage002.dfs.core.windows.net/"
+		},
+		"BlobStorage_sasUri": {
+			"type": "secureString",
+			"metadata": "Secure string for 'sasUri' of 'BlobStorage'"
+		},
+		"SynapseAnalytics_properties_typeProperties_server": {
+			"type": "string",
+			"defaultValue": "synpaseworkspace01.sql.azuresynapse.net"
+		},
+		"SynapseAnalytics_properties_typeProperties_database": {
+			"type": "string",
+			"defaultValue": "regexpooldedicated"
+		},
+		"SynapseAnalytics_properties_typeProperties_userName": {
+			"type": "string",
+			"defaultValue": "synpaseworkspace01"
+		},
+		"synpaseworkspace01-WorkspaceDefaultStorage_properties_typeProperties_url": {
+			"type": "string",
+			"defaultValue": "https://shivamaccount123.dfs.core.windows.net"
+		}
+	},
+	"variables": {
+		"workspaceId": "[concat('Microsoft.Synapse/workspaces/', parameters('workspaceName'))]"
+	},
+	"resources": [
+		{
+			"name": "[concat(parameters('workspaceName'), '/BlobSynapse')]",
+			"type": "Microsoft.Synapse/workspaces/pipelines",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"activities": [
+					{
+						"name": "BlobtoSynapse",
+						"type": "Copy",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "DelimitedTextSource",
+								"storeSettings": {
+									"type": "AzureBlobStorageReadSettings",
+									"recursive": true,
+									"enablePartitionDiscovery": false
+								},
+								"formatSettings": {
+									"type": "DelimitedTextReadSettings"
+								}
+							},
+							"sink": {
+								"type": "SqlDWSink",
+								"allowCopyCommand": true,
+								"copyCommandSettings": {}
+							},
+							"enableStaging": false,
+							"translator": {
+								"type": "TabularTranslator",
+								"mappings": [
+									{
+										"source": {
+											"name": "userId",
+											"type": "String"
+										},
+										"sink": {
+											"name": "userid",
+											"type": "Int32"
+										}
+									},
+									{
+										"source": {
+											"name": "movieId",
+											"type": "String"
+										},
+										"sink": {
+											"name": "movieid",
+											"type": "Int32"
+										}
+									},
+									{
+										"source": {
+											"name": "rating",
+											"type": "String"
+										},
+										"sink": {
+											"name": "rating",
+											"type": "Double"
+										}
+									},
+									{
+										"source": {
+											"name": "timestamp",
+											"type": "String"
+										},
+										"sink": {
+											"name": "TIMESTAMP",
+											"type": "Int32"
+										}
+									}
+								]
+							}
+						},
+						"inputs": [
+							{
+								"referenceName": "CSVFileStorage",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "AzureSynapseAnalyticsTable1",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						]
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"annotations": [],
+				"lastPublishTime": "2025-07-16T12:05:49Z"
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/datasets/CSVFileStorage')]",
+				"[concat(variables('workspaceId'), '/datasets/AzureSynapseAnalyticsTable1')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/AzureSynapseAnalyticsTable1')]",
+			"type": "Microsoft.Synapse/workspaces/datasets",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "SynapseAnalytics",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "AzureSqlDWTable",
+				"schema": [
+					{
+						"name": "userid",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "movieid",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "rating",
+						"type": "float",
+						"precision": 15
+					},
+					{
+						"name": "TIMESTAMP",
+						"type": "int",
+						"precision": 10
+					}
+				],
+				"typeProperties": {
+					"schema": "dbo",
+					"table": "rating_pipeline"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/linkedServices/SynapseAnalytics')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/CSVFileStorage')]",
+			"type": "Microsoft.Synapse/workspaces/datasets",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "BlobStorage",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobStorageLocation",
+						"fileName": "ratings.csv",
+						"container": "synapsecontainer"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\"",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": []
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/linkedServices/BlobStorage')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/AzureDataLakeStorage1')]",
+			"type": "Microsoft.Synapse/workspaces/linkedServices",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"annotations": [],
+				"type": "AzureBlobFS",
+				"typeProperties": {
+					"url": "[parameters('AzureDataLakeStorage1_properties_typeProperties_url')]",
+					"accountKey": {
+						"type": "SecureString",
+						"value": "[parameters('AzureDataLakeStorage1_accountKey')]"
+					}
+				},
+				"connectVia": {
+					"referenceName": "AutoResolveIntegrationRuntime",
+					"type": "IntegrationRuntimeReference"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/integrationRuntimes/AutoResolveIntegrationRuntime')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/BlobStorage')]",
+			"type": "Microsoft.Synapse/workspaces/linkedServices",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"annotations": [],
+				"type": "AzureBlobStorage",
+				"typeProperties": {
+					"sasUri": "[parameters('BlobStorage_sasUri')]"
+				},
+				"connectVia": {
+					"referenceName": "AutoResolveIntegrationRuntime",
+					"type": "IntegrationRuntimeReference"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/integrationRuntimes/AutoResolveIntegrationRuntime')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/SynapseAnalytics')]",
+			"type": "Microsoft.Synapse/workspaces/linkedServices",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"annotations": [],
+				"type": "AzureSqlDW",
+				"typeProperties": {
+					"server": "[parameters('SynapseAnalytics_properties_typeProperties_server')]",
+					"database": "[parameters('SynapseAnalytics_properties_typeProperties_database')]",
+					"encrypt": "mandatory",
+					"trustServerCertificate": false,
+					"authenticationType": "SQL",
+					"userName": "[parameters('SynapseAnalytics_properties_typeProperties_userName')]",
+					"password": {
+						"type": "SecureString",
+						"value": "[parameters('SynapseAnalytics_password')]"
+					}
+				},
+				"connectVia": {
+					"referenceName": "AutoResolveIntegrationRuntime",
+					"type": "IntegrationRuntimeReference"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/integrationRuntimes/AutoResolveIntegrationRuntime')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/synpaseworkspace01-WorkspaceDefaultSqlServer')]",
+			"type": "Microsoft.Synapse/workspaces/linkedServices",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"parameters": {
+					"DBName": {
+						"type": "String"
+					}
+				},
+				"annotations": [],
+				"type": "AzureSqlDW",
+				"typeProperties": {
+					"connectionString": "[parameters('synpaseworkspace01-WorkspaceDefaultSqlServer_connectionString')]"
+				},
+				"connectVia": {
+					"referenceName": "AutoResolveIntegrationRuntime",
+					"type": "IntegrationRuntimeReference"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/integrationRuntimes/AutoResolveIntegrationRuntime')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/synpaseworkspace01-WorkspaceDefaultStorage')]",
+			"type": "Microsoft.Synapse/workspaces/linkedServices",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"annotations": [],
+				"type": "AzureBlobFS",
+				"typeProperties": {
+					"url": "[parameters('synpaseworkspace01-WorkspaceDefaultStorage_properties_typeProperties_url')]"
+				},
+				"connectVia": {
+					"referenceName": "AutoResolveIntegrationRuntime",
+					"type": "IntegrationRuntimeReference"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/integrationRuntimes/AutoResolveIntegrationRuntime')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/AutoResolveIntegrationRuntime')]",
+			"type": "Microsoft.Synapse/workspaces/integrationRuntimes",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"type": "Managed",
+				"typeProperties": {
+					"computeProperties": {
+						"location": "AutoResolve",
+						"dataFlowProperties": {
+							"computeType": "General",
+							"coreCount": 8,
+							"timeToLive": 0
+						}
+					}
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/WorkspaceSystemIdentity')]",
+			"type": "Microsoft.Synapse/workspaces/credentials",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"type": "ManagedIdentity",
+				"typeProperties": {}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/RedBusProject')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"content": {
+					"query": "CREATE TABLE red_bus (\n    First_Name       VARCHAR(100),\n    Last_Name        VARCHAR(100),\n    Age              VARCHAR(10),\n    City_From        VARCHAR(100),\n    [City_To]        VARCHAR(100),\n    Bus_Type         VARCHAR(50),\n    Seat_Type        VARCHAR(50),\n    Booking_Type     VARCHAR(50),\n    Payment_Method   VARCHAR(50),\n    Ticket_Fare      VARCHAR(20)\n);\n\nselect * from red_bus;\n\n-- drop table red_bus;\nCREATE TABLE DimPassenger (\n    PassengerID     INT IDENTITY(1,1),\n    First_Name       VARCHAR(100),\n    Last_Name        VARCHAR(100),\n    Age              VARCHAR(10)\n);\n\n\nCREATE TABLE DimRoute (\n    RouteID         INT IDENTITY(1,1),\n    City_From        VARCHAR(100),\n    City_To          VARCHAR(100)\n);\n\n\n\nCREATE TABLE DimBus (\n    BusID           INT IDENTITY(1,1),\n    Bus_Type         VARCHAR(50),\n    Seat_Type        VARCHAR(50)\n);\n\n\n\nCREATE TABLE DimPayment (\n    PaymentID       INT IDENTITY(1,1),\n    Payment_Method   VARCHAR(50),\n    Booking_Type     VARCHAR(50),\n    Ticket_fare int\n);\n\n\n\n\nCREATE TABLE FactBooking (\n    BookingID    INT,  -- no IDENTITY\n    PassengerID  INT,\n    RouteID      INT,\n    BusID        INT,\n    PaymentID    INT\n);\nselect * from FactBooking;\nselect * from DimBus;\nselect * from DimPassenger;\nselect * from DimRoute;\nselect * from DimPayment;\n\n\n-- drop table FactBooking;\n-- drop table DimBus;\n-- drop table DimPassenger;\n-- drop table DimRoute;\n-- drop table DimPayment;\n\n\n\n\n\n\n\n",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "regexpooldedicated",
+						"poolName": "regexpooldedicated"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/SQL script 1')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"content": {
+					"query": "use serverlessdb\nGO\ncreate master key ENCRYPTION by PASSWORD='Shivam@123'\n\n\n-- CREATE DATABASE SCOPED CREDENTIAL crendentialObject\n-- with IDENTITY = '',\n-- SECRET=''\n-- go;\n\nCREATE EXTERNAL DATA SOURCE demoDataSource\nWITH\n(LOCATION   = 'https://synapsestorage002.dfs.core.windows.net/');\n\n\nCREATE EXTERNAL FILE FORMAT f1_fileformat\nWITH(\n    FORMAT_TYPE= csv,\n    \n)\n\nCREATE EXTERNAL TABLE ratings(\n    userid int,\n    movied int,\n    rating int,\n    timestamp INT\n)\n\n\n",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "serverlessdb",
+						"poolName": "Built-in"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/azureADF')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"content": {
+					"query": "CREATE TABLE rating_ADF(\n    userid int,\n    movieid int,\n    [rating] float,\n    [timestamp] INT\n)\nWITH(\n    DISTRIBUTION=hash(movieid)\n\n);\nselect * from rating_ADF;",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "regexpooldedicated",
+						"poolName": "regexpooldedicated"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/blob storage')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"content": {
+					"query": "CREATE EXTERNAL DATA SOURCE my_external_source\nWITH (\n    LOCATION = 'https://synapsestorage002.dfs.core.windows.net/'\n  \n);\n\nCREATE EXTERNAL FILE FORMAT f1file_format\nWITH (\n    FORMAT_TYPE = DELIMITEDTEXT,\n    FORMAT_OPTIONS (\n        FIELD_TERMINATOR = ',',\n        STRING_DELIMITER = '\"',\n        FIRST_ROW = 2,\n        ENCODING = 'UTF8'\n    )\n);\n\n\nCREATE EXTERNAL TABLE dbo.ratings (\n    userId INT,\n    movieId INT,\n    rating FLOAT,\n    timestamp BIGINT\n)\nWITH (\n    LOCATION = '/synapsecontainer/ratings.csv',  -- No leading slash, decode %20 to space\n    DATA_SOURCE = my_external_source,\n    FILE_FORMAT = f1file_format\n);\n\n\nSELECT TOP   20 * FROM dbo.ratings;",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "serverlessdb",
+						"poolName": "Built-in"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/blob storage2')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"content": {
+					"query": "CREATE EXTERNAL DATA SOURCE blobStorage\nWITH (\n    LOCATION = 'https://synapsestorage002.dfs.core.windows.net/'\n  \n);\n\nCREATE EXTERNAL FILE FORMAT delimitercsv\nWITH(\n    FORMAT_TYPE=DELIMITEDTEXT,\n    FORMAT_OPTIONS(\n        FIELD_TERMINATOR=',',\n        FIRST_ROW=2\n\n    )\n\n);\n-- drop EXTERNAL FILE FORMAT delimitercsv;\n\ncreate EXTERNAL TABLE rating_ext(\n    userid int,\n    movieid int,\n    rating FLOAT,\n    [TIMESTAMP] INT\n    \n)\nWITH(\n    LOCATION='/synapsecontainer/ratings.csv',\n    DATA_SOURCE=blobStorage,\n    FILE_FORMAT=delimitercsv\n);\n-- drop EXTERNAL table rating_ext;\nselect top 20* from rating_ext;",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "serverlessdb",
+						"poolName": "Built-in"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/blobPipeline')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"content": {
+					"query": "CREATE  TABLE rating_pipeline(\n    userid int,\n    movieid int,\n    rating FLOAT,\n    [TIMESTAMP] INT\n)\nWITH(\n    DISTRIBUTION= HASH (userid),\n    CLUSTERED COLUMNSTORE INDEX\n)\n\nSELECT * from rating_pipeline;",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "regexpooldedicated",
+						"poolName": "regexpooldedicated"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/chainPipeline')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"content": {
+					"query": "CREATE TABLE rating_chain(\n    userid int,\n    movieid int,\n    [rating] float,\n    [timestamp] INT\n)\nWITH(\n    DISTRIBUTION=hash(movieid)\n\n);\nselect * from rating_chain;",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "master",
+						"poolName": "Built-in"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/externalfile_SAS')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"content": {
+					"query": "CREATE MASTER KEY ENCRYPTION BY PASSWORD = 'Shivam@123';\n\nCREATE DATABASE SCOPED CREDENTIAL sasToken\nWITH \n    IDENTITY = 'SHARED ACCESS SIGNATURE',\n    SECRET = 'sv=2024-11-04&ss=b&srt=sco&sp=ryx&se=2025-07-16T17:25:23Z&st=2025-07-15T09:10:23Z&spr=https&sig=gP4oUbge7aoM85DMGZ%2FptH8Tqhz6gWD5vFSOJ4QRQns%3D';\n\n\n\n\nCREATE EXTERNAL DATA SOURCE storageSAS\nWITH (\n    LOCATION = 'https://synapsestorage002.dfs.core.windows.net/',\n    CREDENTIAL=sasToken\n  \n);\n\nCREATE EXTERNAL FILE FORMAT sas_file_format\nWITH(\n    FORMAT_TYPE=DELIMITEDTEXT,\n    FORMAT_OPTIONS(\n        FIELD_TERMINATOR=',',\n        FIRST_ROW=2\n\n    )\n\n);\n\n\ncreate EXTERNAL TABLE rating_sas(\n    userid int,\n    movieid int,\n    rating FLOAT,\n    [TIMESTAMP] INT\n    \n)\nWITH(\n    LOCATION='/synapsecontainer/ratings.csv',\n    DATA_SOURCE=storageSAS,\n    FILE_FORMAT=sas_file_format\n);\n\nselect top 20* from rating_sas;\n",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "serverlessdb",
+						"poolName": "Built-in"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/json_file')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"content": {
+					"query": "CREATE DATABASE SCOPED CREDENTIAL sasToken\nWITH \n    IDENTITY = 'SHARED ACCESS SIGNATURE',\n    SECRET = 'sv=2024-11-04&ss=b&srt=sco&sp=ryx&se=2025-07-16T17:25:23Z&st=2025-07-15T09:10:23Z&spr=https&sig=gP4oUbge7aoM85DMGZ%2FptH8Tqhz6gWD5vFSOJ4QRQns%3D';\n\n\n\n\n-- Create an external data source to your blob or ADLS Gen2\nCREATE EXTERNAL DATA SOURCE myExternalDataSource\nWITH (\n    LOCATION = 'https://synapsestorage002.blob.core.windows.net/synapsecontainer/',\n    CREDENTIAL=sasToken\n);\n\n-- drop EXTERNAL DATA SOURCE myExternalDataSource;\n\nCREATE OR ALTER VIEW vw_mtcars_json AS\nSELECT *\nFROM OPENROWSET(\n    BULK 'mtcars.json',\n    DATA_SOURCE = 'myExternalDataSource',\n    FORMAT = 'CSV',\n    FIELDTERMINATOR = '0x0b',\n    FIELDQUOTE = '0x0b'\n) WITH (\n    doc NVARCHAR(MAX)\n) AS jsonData\nCROSS APPLY OPENJSON(doc)\nWITH (\n    model VARCHAR(100),\n    mpg FLOAT,\n    cyl INT,\n    disp FLOAT,\n    hp INT,\n    drat FLOAT,\n    wt FLOAT,\n    qsec FLOAT,\n    vs INT,\n    am INT,\n    gear INT,\n    carb INT\n) AS parsed;\n\n\nSELECT * FROM vw_mtcars_json;\n",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "serverlessdb",
+						"poolName": "Built-in"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/parquet file')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"content": {
+					"query": "CREATE MASTER KEY ENCRYPTION BY PASSWORD = 'Shivam@123';\n\nCREATE DATABASE SCOPED CREDENTIAL sasToken\nWITH \n    IDENTITY = 'SHARED ACCESS SIGNATURE',\n    SECRET = 'sv=2024-11-04&ss=b&srt=sco&sp=ryx&se=2025-07-16T17:25:23Z&st=2025-07-15T09:10:23Z&spr=https&sig=gP4oUbge7aoM85DMGZ%2FptH8Tqhz6gWD5vFSOJ4QRQns%3D';\n\n\n\nCREATE EXTERNAL DATA SOURCE parstorage\nWITH (\n    LOCATION = 'https://synapsestorage002.dfs.core.windows.net/',\n    CREDENTIAL=sasToken\n);\n-- drop external data SOURCE parstorage;\n\nCREATE EXTERNAL FILE FORMAT parquetfile\nWITH (\n    FORMAT_TYPE = PARQUET\n);\n\n-- drop EXTERNAL FILE FORMAT parquetfile;\n\nCREATE EXTERNAL TABLE dbo.mtcars_external (\n    mpg FLOAT,\n    cyl INT,\n    disp FLOAT,\n    hp INT,\n    drat FLOAT,\n    wt FLOAT,\n    qsec FLOAT,\n    vs INT,\n    am INT,\n    gear INT,\n    carb INT\n)\nWITH (\n    LOCATION = '/synapsecontainer/mtcars.parquet',  -- <-- Replace with actual container path\n    DATA_SOURCE = parstorage,\n    FILE_FORMAT = parquetfile\n);\n\n-- drop EXTERNAL table dbo.mtcars_external;\nselect top 20* from  dbo.mtcars_external;",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "serverlessdb",
+						"poolName": "Built-in"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/parquetToSynapse')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"content": {
+					"query": "CREATE TABLE rating_parquet(\n    userid int,\n    movieid int,\n    [rating] float,\n    [timestamp] INT\n)\nWITH(\n    DISTRIBUTION=hash(movieid)\n\n);\nselect * from rating_parquet;",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "regexpooldedicated",
+						"poolName": "regexpooldedicated"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/pipelineBlob')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"content": {
+					"query": "SELECT TOP (100) [userid]\n,[movieid]\n,[rating]\n,[TIMESTAMP]\n FROM [dbo].[rating_pipeline]",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "regexpooldedicated",
+						"poolName": "regexpooldedicated"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/sqlDatabase')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"content": {
+					"query": "CREATE table sql_db(SalesOrderID int , \t\n SalesOrderDetailID int, OrderQty int,RevisionNumber int)\n\nselect * from sql_db;\n",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "regexpooldedicated",
+						"poolName": "regexpooldedicated"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/trigger')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"content": {
+					"query": "CREATE TABLE rating_trigger(\n    userid int,\n    movieid int,\n    [rating] float,\n    [timestamp] INT\n);\nselect * from rating_trigger;\nselect count(*) from rating_trigger;",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "regexpooldedicated",
+						"poolName": "regexpooldedicated"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/regexpooldedicated')]",
+			"type": "Microsoft.Synapse/workspaces/sqlPools",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"collation": "SQL_Latin1_General_CP1_CI_AS",
+				"maxSizeBytes": 263882790666240,
+				"annotations": []
+			},
+			"dependsOn": [],
+			"location": "northeurope"
+		}
+	]
+}

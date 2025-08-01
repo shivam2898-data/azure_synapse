@@ -1,0 +1,17 @@
+{
+	"name": "blobPipeline",
+	"properties": {
+		"content": {
+			"query": "CREATE  TABLE rating_pipeline(\n    userid int,\n    movieid int,\n    rating FLOAT,\n    [TIMESTAMP] INT\n)\nWITH(\n    DISTRIBUTION= HASH (userid),\n    CLUSTERED COLUMNSTORE INDEX\n)\n\nSELECT * from rating_pipeline;",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"databaseName": "regexpooldedicated",
+				"poolName": "regexpooldedicated"
+			},
+			"resultLimit": 5000
+		},
+		"type": "SqlQuery"
+	}
+}

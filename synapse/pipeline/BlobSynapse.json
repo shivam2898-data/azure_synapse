@@ -1,0 +1,98 @@
+{
+	"name": "BlobSynapse",
+	"properties": {
+		"activities": [
+			{
+				"name": "BlobtoSynapse",
+				"type": "Copy",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "DelimitedTextSource",
+						"storeSettings": {
+							"type": "AzureBlobStorageReadSettings",
+							"recursive": true,
+							"enablePartitionDiscovery": false
+						},
+						"formatSettings": {
+							"type": "DelimitedTextReadSettings"
+						}
+					},
+					"sink": {
+						"type": "SqlDWSink",
+						"allowCopyCommand": true
+					},
+					"enableStaging": false,
+					"translator": {
+						"type": "TabularTranslator",
+						"mappings": [
+							{
+								"source": {
+									"name": "userId",
+									"type": "String"
+								},
+								"sink": {
+									"name": "userid",
+									"type": "Int32"
+								}
+							},
+							{
+								"source": {
+									"name": "movieId",
+									"type": "String"
+								},
+								"sink": {
+									"name": "movieid",
+									"type": "Int32"
+								}
+							},
+							{
+								"source": {
+									"name": "rating",
+									"type": "String"
+								},
+								"sink": {
+									"name": "rating",
+									"type": "Double"
+								}
+							},
+							{
+								"source": {
+									"name": "timestamp",
+									"type": "String"
+								},
+								"sink": {
+									"name": "TIMESTAMP",
+									"type": "Int32"
+								}
+							}
+						]
+					}
+				},
+				"inputs": [
+					{
+						"referenceName": "CSVFileStorage",
+						"type": "DatasetReference"
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "AzureSynapseAnalyticsTable1",
+						"type": "DatasetReference"
+					}
+				]
+			}
+		],
+		"annotations": [],
+		"lastPublishTime": "2025-07-16T12:05:49Z"
+	},
+	"type": "Microsoft.Synapse/workspaces/pipelines"
+}

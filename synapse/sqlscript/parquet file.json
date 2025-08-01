@@ -1,0 +1,17 @@
+{
+	"name": "parquet file",
+	"properties": {
+		"content": {
+			"query": "CREATE MASTER KEY ENCRYPTION BY PASSWORD = 'Shivam@123';\n\nCREATE DATABASE SCOPED CREDENTIAL sasToken\nWITH \n    IDENTITY = 'SHARED ACCESS SIGNATURE',\n    SECRET = 'sv=2024-11-04&ss=b&srt=sco&sp=ryx&se=2025-07-16T17:25:23Z&st=2025-07-15T09:10:23Z&spr=https&sig=gP4oUbge7aoM85DMGZ%2FptH8Tqhz6gWD5vFSOJ4QRQns%3D';\n\n\n\nCREATE EXTERNAL DATA SOURCE parstorage\nWITH (\n    LOCATION = 'https://synapsestorage002.dfs.core.windows.net/',\n    CREDENTIAL=sasToken\n);\n-- drop external data SOURCE parstorage;\n\nCREATE EXTERNAL FILE FORMAT parquetfile\nWITH (\n    FORMAT_TYPE = PARQUET\n);\n\n-- drop EXTERNAL FILE FORMAT parquetfile;\n\nCREATE EXTERNAL TABLE dbo.mtcars_external (\n    mpg FLOAT,\n    cyl INT,\n    disp FLOAT,\n    hp INT,\n    drat FLOAT,\n    wt FLOAT,\n    qsec FLOAT,\n    vs INT,\n    am INT,\n    gear INT,\n    carb INT\n)\nWITH (\n    LOCATION = '/synapsecontainer/mtcars.parquet',  -- <-- Replace with actual container path\n    DATA_SOURCE = parstorage,\n    FILE_FORMAT = parquetfile\n);\n\n-- drop EXTERNAL table dbo.mtcars_external;\nselect top 20* from  dbo.mtcars_external;",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"databaseName": "serverlessdb",
+				"poolName": "Built-in"
+			},
+			"resultLimit": 5000
+		},
+		"type": "SqlQuery"
+	}
+}

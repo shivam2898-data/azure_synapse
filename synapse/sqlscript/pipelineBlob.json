@@ -1,0 +1,17 @@
+{
+	"name": "pipelineBlob",
+	"properties": {
+		"content": {
+			"query": "SELECT TOP (100) [userid]\n,[movieid]\n,[rating]\n,[TIMESTAMP]\n FROM [dbo].[rating_pipeline]",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"databaseName": "regexpooldedicated",
+				"poolName": "regexpooldedicated"
+			},
+			"resultLimit": 5000
+		},
+		"type": "SqlQuery"
+	}
+}

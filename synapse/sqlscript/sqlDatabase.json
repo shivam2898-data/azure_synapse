@@ -1,0 +1,17 @@
+{
+	"name": "sqlDatabase",
+	"properties": {
+		"content": {
+			"query": "CREATE table sql_db(SalesOrderID int , \t\n SalesOrderDetailID int, OrderQty int,RevisionNumber int)\n\nselect * from sql_db;\n",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"databaseName": "regexpooldedicated",
+				"poolName": "regexpooldedicated"
+			},
+			"resultLimit": 5000
+		},
+		"type": "SqlQuery"
+	}
+}

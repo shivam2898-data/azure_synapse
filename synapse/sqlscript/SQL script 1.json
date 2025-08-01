@@ -1,0 +1,17 @@
+{
+	"name": "SQL script 1",
+	"properties": {
+		"content": {
+			"query": "use serverlessdb\nGO\ncreate master key ENCRYPTION by PASSWORD='Shivam@123'\n\n\n-- CREATE DATABASE SCOPED CREDENTIAL crendentialObject\n-- with IDENTITY = '',\n-- SECRET=''\n-- go;\n\nCREATE EXTERNAL DATA SOURCE demoDataSource\nWITH\n(LOCATION   = 'https://synapsestorage002.dfs.core.windows.net/');\n\n\nCREATE EXTERNAL FILE FORMAT f1_fileformat\nWITH(\n    FORMAT_TYPE= csv,\n    \n)\n\nCREATE EXTERNAL TABLE ratings(\n    userid int,\n    movied int,\n    rating int,\n    timestamp INT\n)\n\n\n",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"databaseName": "serverlessdb",
+				"poolName": "Built-in"
+			},
+			"resultLimit": 5000
+		},
+		"type": "SqlQuery"
+	}
+}

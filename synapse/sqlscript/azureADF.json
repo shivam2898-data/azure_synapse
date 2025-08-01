@@ -1,0 +1,17 @@
+{
+	"name": "azureADF",
+	"properties": {
+		"content": {
+			"query": "CREATE TABLE rating_ADF(\n    userid int,\n    movieid int,\n    [rating] float,\n    [timestamp] INT\n)\nWITH(\n    DISTRIBUTION=hash(movieid)\n\n);\nselect * from rating_ADF;",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"databaseName": "regexpooldedicated",
+				"poolName": "regexpooldedicated"
+			},
+			"resultLimit": 5000
+		},
+		"type": "SqlQuery"
+	}
+}

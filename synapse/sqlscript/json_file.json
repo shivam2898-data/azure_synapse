@@ -1,0 +1,17 @@
+{
+	"name": "json_file",
+	"properties": {
+		"content": {
+			"query": "CREATE DATABASE SCOPED CREDENTIAL sasToken\nWITH \n    IDENTITY = 'SHARED ACCESS SIGNATURE',\n    SECRET = 'sv=2024-11-04&ss=b&srt=sco&sp=ryx&se=2025-07-16T17:25:23Z&st=2025-07-15T09:10:23Z&spr=https&sig=gP4oUbge7aoM85DMGZ%2FptH8Tqhz6gWD5vFSOJ4QRQns%3D';\n\n\n\n\n-- Create an external data source to your blob or ADLS Gen2\nCREATE EXTERNAL DATA SOURCE myExternalDataSource\nWITH (\n    LOCATION = 'https://synapsestorage002.blob.core.windows.net/synapsecontainer/',\n    CREDENTIAL=sasToken\n);\n\n-- drop EXTERNAL DATA SOURCE myExternalDataSource;\n\nCREATE OR ALTER VIEW vw_mtcars_json AS\nSELECT *\nFROM OPENROWSET(\n    BULK 'mtcars.json',\n    DATA_SOURCE = 'myExternalDataSource',\n    FORMAT = 'CSV',\n    FIELDTERMINATOR = '0x0b',\n    FIELDQUOTE = '0x0b'\n) WITH (\n    doc NVARCHAR(MAX)\n) AS jsonData\nCROSS APPLY OPENJSON(doc)\nWITH (\n    model VARCHAR(100),\n    mpg FLOAT,\n    cyl INT,\n    disp FLOAT,\n    hp INT,\n    drat FLOAT,\n    wt FLOAT,\n    qsec FLOAT,\n    vs INT,\n    am INT,\n    gear INT,\n    carb INT\n) AS parsed;\n\n\nSELECT * FROM vw_mtcars_json;\n",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"databaseName": "serverlessdb",
+				"poolName": "Built-in"
+			},
+			"resultLimit": 5000
+		},
+		"type": "SqlQuery"
+	}
+}

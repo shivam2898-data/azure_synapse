@@ -1,0 +1,17 @@
+{
+	"name": "blob storage",
+	"properties": {
+		"content": {
+			"query": "CREATE EXTERNAL DATA SOURCE my_external_source\nWITH (\n    LOCATION = 'https://synapsestorage002.dfs.core.windows.net/'\n  \n);\n\nCREATE EXTERNAL FILE FORMAT f1file_format\nWITH (\n    FORMAT_TYPE = DELIMITEDTEXT,\n    FORMAT_OPTIONS (\n        FIELD_TERMINATOR = ',',\n        STRING_DELIMITER = '\"',\n        FIRST_ROW = 2,\n        ENCODING = 'UTF8'\n    )\n);\n\n\nCREATE EXTERNAL TABLE dbo.ratings (\n    userId INT,\n    movieId INT,\n    rating FLOAT,\n    timestamp BIGINT\n)\nWITH (\n    LOCATION = '/synapsecontainer/ratings.csv',  -- No leading slash, decode %20 to space\n    DATA_SOURCE = my_external_source,\n    FILE_FORMAT = f1file_format\n);\n\n\nSELECT TOP   20 * FROM dbo.ratings;",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"databaseName": "serverlessdb",
+				"poolName": "Built-in"
+			},
+			"resultLimit": 5000
+		},
+		"type": "SqlQuery"
+	}
+}
